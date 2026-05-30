@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>戰鬥陀螺樹狀淘汰賽賽程系統</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #38bdf8;
+            --primary-hover: #0ea5e9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #f59e0b;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 15px;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #334155;
+            overflow-x: auto;
+        }
+
+        .header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111827;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #1e293b;
+        }
+
+        .host-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .host-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            color: #0f172a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .host-text {
+            font-size: 13px;
+        }
+        .host-text div { color: var(--text-muted); }
+        .host-text span { color: white; font-weight: bold; }
+
+        .role-badge {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .role-admin { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .role-viewer { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); border: 1px solid var(--text-muted); }
+
+        .title-input-round {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid #475569;
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 6px;
+            width: 100%;
+            max-width: 500px;
+            display: block;
+            margin: 0 auto 15px auto;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            background: #111827;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #1e293b;
+        }
+
+        .stats-item span {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .input-section {
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            box-sizing: border-box;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            font-size: 15px;
+            color: var(--text-main);
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .btn-blue { background-color: var(--primary); }
+        .btn-blue:hover { background-color: var(--primary-hover); }
+        .btn-danger { background-color: #475569; }
+        .btn-danger:hover { background-color: var(--danger); }
+
+        .bracket-wrapper {
+            display: flex;
+            padding: 20px 0;
+            min-width: max-content;
+            justify-content: flex-start;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 200px;
+            margin-right: 40px;
+            position: relative;
+        }
+
+        .round-title {
+            text-align: center;
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 15px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 5px;
+        }
+
+        .match-box {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 6px;
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        body.admin-mode .match-box.ready-to-play {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+        }
+
+        .player-slot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1f2937;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            border: 1px solid transparent;
+            transition: all 0.1s;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        body.admin-mode .player-slot:not(.empty) {
+            cursor: pointer;
+        }
+        body.admin-mode .player-slot:not(.empty):hover {
+            border-color: var(--success);
+            background: #2d3748;
+        }
+
+        .player-slot.winner {
+            background: var(--success);
+            color: white;
+            font-weight: bold;
+        }
+
+        .player-slot.loser {
+            opacity: 0.3;
+            text-decoration: line-through;
+        }
+
+        .player-slot.empty {
+            background: rgba(255,255,255,0.03);
+            color: var(--text-muted);
+            border: 1px dashed #374151;
+        }
+
+        .champion-crown {
+            text-align: center;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px dashed var(--accent);
+            border-radius: 12px;
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .sub-tip {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-meta">
+        <div class="host-info">
+            <div class="host-avatar">🌪️</div>
+            <div class="host-text">
+                <div>主辦方 (Host)</div>
+                <span id="host-name-display">SSHunter72</span>
+            </div>
+        </div>
+        <div id="role-badge-area"></div>
+    </div>
+
+    <input type="text" id="tournament-title" class="title-input-round" value="🌪️ 戰鬥陀螺隨機對戰樹狀賽程系統" onchange="saveToStorage()" disabled>
+    
+    <div class="stats-bar" id="stats-area" style="display: none;">
+        <div class="stats-item">報名總數：<span id="stat-total">0</span> 人</div>
+        <div class="stats-item">目前存活：<span id="stat-alive">0</span> 人</div>
+    </div>
+
+    <div class="input-section" id="stage-setup" style="display: none;">
+        <p class="sub-tip">請輸入選手名單，每行一個人。</p>
+        <textarea id="player-names" placeholder="選手1&#10;選手2&#10;選手3"></textarea>
+        <button class="btn-blue" onclick="startTournament()">🔥 生成經典對戰樹狀表</button>
+    </div>
+
+    <div id="stage-tournament" style="display: none;">
+        <p class="sub-tip" id="mode-guide-text">⏳ 目前為觀看模式，畫面每 5 秒會自動同步最新戰況。</p>
+        <div class="bracket-wrapper" id="bracket-container"></div>
+        <button class="btn-danger" id="admin-reset-btn" style="margin-top: 30px; font-size: 13px; padding: 8px; max-width: 200px; display: none; margin-left: auto; margin-right: auto;" onclick="resetTournament()">❌ 重設大賽（清空全部）</button>
+    </div>
+</div>
+
+<script>
+    let gameState = {
+        title: "🌪️ 戰鬥陀螺隨機對戰樹狀賽程系統",
+        isStarted: false,
+        nodes: [],
+        initialCount: 0,
+        maxRound: 1
+    };
+
+    const roundNames = ["", "第一輪", "第二輪", "第三輪", "第四輪", "第五輪", "第六輪", "第七輪", "第八輪"];
+    const ADMIN_PASSWORD = "123"; 
+    let isAdmin = false;
+
+    window.onload = function() {
+        checkPermission();
+        loadState();
+        
+        if (!isAdmin && gameState.isStarted) {
+            setInterval(syncViewerData, 5000);
+        }
+    }
+
+    function checkPermission() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('admin') === ADMIN_PASSWORD) {
+            isAdmin = true;
+            document.body.classList.add('admin-mode');
+            document.getElementById('tournament-title').removeAttribute('disabled');
+            document.getElementById('role-badge-area').innerHTML = '<span class="role-badge role-admin">👑 主辦方模式</span>';
+            document.getElementById('mode-guide-text').innerHTML = '💡 現場操作：黃框對戰組代表到齊了，有空桌即可叫號！<b>點擊獲勝者名字</b>推進賽程。';
+            document.getElementById('admin-reset-btn').style.display = 'block';
+        } else {
+            isAdmin = false;
+            document.body.classList.remove('admin-mode');
+            document.getElementById('tournament-title').setAttribute('disabled', 'true');
+            document.getElementById('role-badge-area').innerHTML = '<span class="role-badge role-viewer">👁️ 唯讀觀看模式</span>';
+        }
+    }
+
+    function loadState() {
+        const savedState = localStorage.getItem('beyblade_tree_bracket_save');
+        if (savedState) {
+            let parsed = JSON.parse(savedState);
+            if (parsed && parsed.isStarted) {
+                gameState = parsed;
+                document.getElementById('tournament-title').value = gameState.title;
+                renderTreeBracket();
+                return;
+            }
+        }
+        
+        if (isAdmin) {
+            document.getElementById('stage-setup').style.display = 'block';
+            document.getElementById('stage-tournament').style.display = 'none';
+        } else {
+            document.getElementById('stage-tournament').style.display = 'block';
+            document.getElementById('bracket-container').innerHTML = "<div style='text-align:center; width:100%; color:var(--text-muted); padding:40px;'>大賽尚未建立，請等待主辦方抽籤...</div>";
+        }
+    }
+
+    function syncViewerData() {
+        const savedState = localStorage.getItem('beyblade_tree_bracket_save');
+        if (savedState) {
+            let parsed = JSON.parse(savedState);
+            if (parsed && JSON.stringify(parsed) !== JSON.stringify(gameState)) {
+                gameState = parsed;
+                renderTreeBracket();
+            }
+        }
+    }
+
+    function saveToStorage() {
+        gameState.title = document.getElementById('tournament-title').value;
+        localStorage.setItem('beyblade_tree_bracket_save', JSON.stringify(gameState));
+    }
+
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startTournament() {
+        if (!isAdmin) return;
+        const text = document.getElementById('player-names').value.trim();
+        if (!text) { return alert('請輸入至少 2 位選手的名字！'); }
+        let list = text.split('\n').map(name => name.trim()).filter(name => name !== "");
+        if (list.length < 2) { return alert('請輸入至少 2 位選手的名字！'); }
+
+        gameState.initialCount = list.length;
+        list = shuffle(list);
+        buildTreeStructures(list);
+    }
+
+    function buildTreeStructures(playerList) {
+        let total = playerList.length;
+        let nextPower = 2;
+        while (nextPower < total) { nextPower *= 2; }
+        let byeCount = nextPower - total;
+        let matchCount = (total - byeCount) / 2;
+
+        gameState.nodes = [];
+        let pIdx = 0;
+        let nodeId = 1;
+
+        let firstRoundNodes = [];
+        for (let i = 0; i < matchCount; i++) {
+            let n = { id: nodeId++, round: 1, p1: playerList[pIdx++], p2: playerList[pIdx++], winner: null, targetNode: null, targetPos: null };
+            gameState.nodes.push(n);
+            firstRoundNodes.push(n);
+        }
+
+        let previousLayer = [...firstRoundNodes];
+        for (let i = 0; i < byeCount; i++) {
+            previousLayer.push({ id: null, winner: playerList[pIdx++] }); 
+        }
+
+        let currentLayer = previousLayer;
+        let r = 2;
+        while (currentLayer.length > 1) {
+            let nextLayer = [];
+            for (let i = 0; i < currentLayer.length; i += 2) {
+                let left = currentLayer[i];
+                let right = currentLayer[i+1];
+
+                let parentNode = {
+                    id: nodeId++,
+                    round: r,
+                    p1: left.id === null ? left.winner : null,
+                    p2: (right && right.id === null) ? right.winner : null,
+                    winner: null,
+                    targetNode: null,
+                    targetPos: null
+                };
+
+                gameState.nodes.push(parentNode);
+
+                if (left.id !== null) { left.targetNode = parentNode.id; left.targetPos = 'p1'; }
+                if (right && right.id !== null) { right.targetNode = parentNode.id; right.targetPos = 'p2'; }
+
+                nextLayer.push(parentNode);
+            }
+            currentLayer = nextLayer;
+            r++;
+        }
+
+        gameState.maxRound = r - 1;
+        gameState.isStarted = true;
+        saveToStorage();
+        renderTreeBracket();
+    }
+
+    function renderTreeBracket() {
+        document.getElementById('stage-setup').style.display = 'none';
+        document.getElementById('stage-tournament').style.display = 'block';
+        document.getElementById('stats-area').style.display = 'flex';
+
+        let completedWinners = gameState.nodes.filter(n => n.winner).map(n => n.winner);
+        document.getElementById('stat-total').innerText = gameState.initialCount;
+        let alive = gameState.initialCount - completedWinners.length;
+        document.getElementById('stat-alive').innerText = alive < 1 ? 1 : alive;
+
+        const container = document.getElementById('bracket-container');
+        container.innerHTML = '';
+
+        for (let r = 1; r <= gameState.maxRound; r++) {
+            let roundCol = document.createElement('div');
+            roundCol.className = 'bracket-round';
+            
+            let title = document.createElement('div');
+            title.className = 'round-title';
+            title.innerText = roundNames[r] || `第 ${r} 輪`;
+            roundCol.appendChild(title);
+
+            let roundNodes = gameState.nodes.filter(n => n.round === r);
+            
+            roundNodes.forEach(node => {
+                let matchBox = document.createElement('div');
+                matchBox.className = 'match-box';
+                
+                if (node.p1 && node.p2 && !node.winner) {
+                    matchBox.classList.add('ready-to-play');
+                }
+
+                let p1Class = "player-slot";
+                if (!node.p1) p1Class += " empty";
+                else if (node.winner === node.p1) p1Class += " winner";
+                else if (node.winner && node.winner !== node.p1) p1Class += " loser";
+
+                let p2Class = "player-slot";
+                if (!node.p2) p2Class += " empty";
+                else if (node.winner === node.p2) p2Class += " winner";
+                else if (node.winner && node.winner !== node.p2) p2Class += " loser";
+
+                matchBox.innerHTML = `
+                    <div class="${p1Class}" onclick="clickPlayer(${node.id}, 1)">
+                        <span>${node.p1 || '等待對手'}</span>
+                    </div>
+                    <div class="${p2Class}" onclick="clickPlayer(${node.id}, 2)">
+                        <span>${node.p2 || '等待對手'}</span>
+                    </div>
+                `;
+                roundCol.appendChild(matchBox);
+            });
+
+            container.appendChild(roundCol);
+        }
+
+        let finalNode = gameState.nodes[gameState.nodes.length - 1];
+        let championCol = document.createElement('div');
+        championCol.className = 'bracket-round';
+        championCol.innerHTML = `
+            <div class="round-title">🏆 總冠軍</div>
+            <div class="champion-crown">${finalNode.winner ? '👑 ' + finalNode.winner : '⏳ 虛位以待'}</div>
+        `;
+        container.appendChild(championCol);
+    }
+
+    function clickPlayer(nodeId, slotIdx) {
+        if (!isAdmin) return; 
+        
+        let node = gameState.nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        let targetName = slotIdx === 1 ? node.p1 : node.p2;
+        if (!targetName) return;
+
+        if (!node.winner) {
+            if (!node.p1 || !node.p2) return; 
+            node.winner = targetName;
+            
+            if (node.targetNode) {
+                let parentNode = gameState.nodes.find(n => n.id === node.targetNode);
+                if (node.targetPos === 'p1') parentNode.p1 = targetName;
+                if (node.targetPos === 'p2') parentNode.p2 = targetName;
+            }
+        } else if (node.winner === targetName) {
+            let oldWinner = node.winner;
+            node.winner = null;
+            if (node.targetNode) {
+                clearParentNode(node.targetNode, oldWinner);
+            }
+        }
+
+        saveToStorage();
+        renderTreeBracket();
+    }
+
+    function clearParentNode(parentNodeId, nameToRemove) {
+        let parentNode = gameState.nodes.find(n => n.id === parentNodeId);
+        if (!parentNode) return;
+
+        let changed = false;
+        let oldParentWinner = parentNode.winner;
+
+        if (parentNode.p1 === nameToRemove) { parentNode.p1 = null; changed = true; }
+        if (parentNode.p2 === nameToRemove) { parentNode.p2 = null; changed = true; }
+
+        if (changed) {
+            parentNode.winner = null;
+            if (parentNode.targetNode && oldParentWinner) {
+                clearParentNode(parentNode.targetNode, oldParentWinner);
+            }
+        }
+    }
+
+    function resetTournament() {
+        if (!isAdmin) return;
+        if (confirm('確定要清除所有對戰紀錄重新開始嗎？')) {
+            localStorage.removeItem('beyblade_tree_bracket_save');
+            gameState.isStarted = false;
+            gameState.nodes = [];
+            loadState();
+        }
+    }
+</script>
+
+</body>
+</html>
